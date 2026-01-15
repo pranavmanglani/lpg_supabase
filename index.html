@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LPG Monitor</title>
+</head>
+<body>
+  <h1>🔥 LPG Monitor</h1>
+  <p id="status">Waiting for data...</p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co";
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Ask notification permission
+Notification.requestPermission();
+
+supabase
+  .channel('lpg-alert')
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'lpg_data' },
+    payload => {
+      const value = payload.new.value;
+
+      document.getElementById("status").innerText =
+        "LPG ALERT! Value: " + value;
+
+      alert("🚨 LPG GAS LEAK DETECTED: " + value);
+
+      if (Notification.permission === "granted") {
+        new Notification("LPG ALERT 🚨", {
+          body: "Gas level reached: " + value
+        });
+      }
+    }
+  )
+  .subscribe();
+</script>
+
+</body>
+</html>
