@@ -1,44 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>LPG Monitor</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LPG Gas Monitor</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff512f, #dd2476);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #ffffff;
+      width: 90%;
+      max-width: 400px;
+      padding: 25px;
+      border-radius: 18px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .card h1 {
+      margin: 0;
+      color: #333;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      background: #f1f1f1;
+      font-size: 18px;
+      color: #444;
+    }
+
+    .alert {
+      background: #ff3b3b !important;
+      color: white;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .value {
+      font-size: 40px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>🔥 LPG Monitor</h1>
-  <p id="status">Waiting for data...</p>
+
+  <div class="card">
+    <h1>🔥 LPG Monitor</h1>
+
+    <div id="status" class="status">
+      Waiting for sensor data...
+    </div>
+
+    <div id="value" class="value">--</div>
+
+    <div class="footer">
+      ESP8266 + Supabase + Netlify
+    </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co";
-const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+  const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// Ask notification permission
-Notification.requestPermission();
+  // Ask notification permission
+  Notification.requestPermission();
 
-supabase
-  .channel('lpg-alert')
-  .on(
-    'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'lpg_data' },
-    payload => {
-      const value = payload.new.value;
+  supabase
+    .channel("lpg-realtime")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "lpg_data" },
+      payload => {
+        const gasValue = payload.new.value;
 
-      document.getElementById("status").innerText =
-        "LPG ALERT! Value: " + value;
+        const status = document.getElementById("status");
+        const value = document.getElementById("value");
 
-      alert("🚨 LPG GAS LEAK DETECTED: " + value);
+        status.innerText = "🚨 GAS LEAK DETECTED!";
+        status.classList.add("alert");
+        value.innerText = gasValue;
 
-      if (Notification.permission === "granted") {
-        new Notification("LPG ALERT 🚨", {
-          body: "Gas level reached: " + value
-        });
+        alert("🚨 LPG ALERT!\nValue: " + gasValue);
+
+        if (Notification.permission === "granted") {
+          new Notification("LPG GAS ALERT 🚨", {
+            body: "Gas level reached: " + gasValue
+          });
+        }
       }
-    }
-  )
-  .subscribe();
+    )
+    .subscribe();
 </script>
 
 </body>
