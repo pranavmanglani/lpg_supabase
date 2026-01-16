@@ -1,47 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32 Ultrasonic Monitor</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>ESP32 Distance Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
       margin: 0;
       height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      background: linear-gradient(135deg,#1d2671,#c33764);
+      justify-content: center;
+      background: linear-gradient(135deg, #1d2671, #c33764);
       font-family: Arial, sans-serif;
     }
+
     .card {
-      background: #fff;
-      padding: 25px;
+      background: white;
+      padding: 30px;
       width: 90%;
       max-width: 380px;
-      border-radius: 16px;
+      border-radius: 18px;
       text-align: center;
       box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     }
-    h1 { margin: 0; }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
     .status {
       margin-top: 20px;
-      padding: 15px;
+      padding: 14px;
       border-radius: 10px;
       background: #eee;
       font-size: 18px;
     }
+
     .alert {
       background: #ff3b3b;
-      color: #fff;
+      color: white;
       animation: pulse 1s infinite;
     }
+
     .value {
-      font-size: 40px;
-      margin-top: 10px;
+      font-size: 42px;
       font-weight: bold;
+      margin-top: 12px;
     }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
@@ -60,38 +69,48 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co/rest/v1/lpg_data
-";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
+  // ✅ YOUR SUPABASE CONFIG (EXACT)
+  const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co";
+  const supabaseKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-Notification.requestPermission();
+  console.log("✅ Supabase client created");
 
-supabase
-  .channel("distance-channel")
-  .on(
-    "postgres_changes",
-    { event: "INSERT", schema: "public", table: "lpg_data" },
-    payload => {
-      const distance = payload.new.value;
+  Notification.requestPermission();
 
-      document.getElementById("status").innerText =
-        "🚨 OBJECT TOO CLOSE!";
-      document.getElementById("status").classList.add("alert");
-      document.getElementById("value").innerText =
-        distance + " cm";
+  supabase
+    .channel("distance-channel")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "lpg_data"
+      },
+      payload => {
+        console.log("🔥 REALTIME PAYLOAD:", payload);
 
-      alert("🚨 Object detected at " + distance + " cm");
+        const distance = payload.new.value;
 
-      if (Notification.permission === "granted") {
-        new Notification("ESP32 Distance Alert 🚨", {
-          body: "Object at " + distance + " cm"
-        });
+        const status = document.getElementById("status");
+        const value = document.getElementById("value");
+
+        status.innerText = "🚨 OBJECT TOO CLOSE!";
+        status.classList.add("alert");
+        value.innerText = distance + " cm";
+
+        if (Notification.permission === "granted") {
+          new Notification("ESP32 Distance Alert 🚨", {
+            body: "Object detected at " + distance + " cm"
+          });
+        }
       }
-    }
-  )
-  .subscribe();
+    )
+    .subscribe(status => {
+      console.log("📡 Realtime status:", status);
+    });
 </script>
 
 </body>
