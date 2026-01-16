@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>ESP32 Distance Monitor</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
     body {
@@ -17,7 +17,7 @@
     }
 
     .card {
-      background: white;
+      background: #ffffff;
       padding: 30px;
       width: 90%;
       max-width: 380px;
@@ -26,35 +26,23 @@
       box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     }
 
-    h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
     .status {
       margin-top: 20px;
       padding: 14px;
       border-radius: 10px;
-      background: #eee;
+      background: #eeeeee;
       font-size: 18px;
     }
 
     .alert {
       background: #ff3b3b;
-      color: white;
-      animation: pulse 1s infinite;
+      color: #ffffff;
     }
 
     .value {
-      font-size: 42px;
+      font-size: 40px;
       font-weight: bold;
-      margin-top: 12px;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -62,23 +50,19 @@
 <body>
 
 <div class="card">
-  <h1>📡 ESP32 Distance Monitor</h1>
-  <div id="status" class="status">Waiting for data…</div>
+  <h2>ESP32 Distance Monitor</h2>
+  <div id="status" class="status">Waiting for data</div>
   <div id="value" class="value">-- cm</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ✅ YOUR SUPABASE CONFIG (EXACT)
   const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co";
-  const supabaseKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
 
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  console.log("✅ Supabase client created");
-
-  Notification.requestPermission();
+  console.log("Supabase initialized");
 
   supabase
     .channel("distance-channel")
@@ -89,27 +73,18 @@
         schema: "public",
         table: "lpg_data"
       },
-      payload => {
-        console.log("🔥 REALTIME PAYLOAD:", payload);
+      function (payload) {
+        console.log("Realtime payload:", payload);
 
         const distance = payload.new.value;
 
-        const status = document.getElementById("status");
-        const value = document.getElementById("value");
-
-        status.innerText = "🚨 OBJECT TOO CLOSE!";
-        status.classList.add("alert");
-        value.innerText = distance + " cm";
-
-        if (Notification.permission === "granted") {
-          new Notification("ESP32 Distance Alert 🚨", {
-            body: "Object detected at " + distance + " cm"
-          });
-        }
+        document.getElementById("status").innerText = "Object too close";
+        document.getElementById("status").classList.add("alert");
+        document.getElementById("value").innerText = distance + " cm";
       }
     )
-    .subscribe(status => {
-      console.log("📡 Realtime status:", status);
+    .subscribe(function (status) {
+      console.log("Realtime status:", status);
     });
 </script>
 
