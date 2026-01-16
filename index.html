@@ -1,127 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LPG Gas Monitor</title>
+  <meta charset="UTF-8">
+  <title>ESP32 Ultrasonic Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: "Segoe UI", sans-serif;
-    }
-
     body {
       margin: 0;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
+      height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg,#1d2671,#c33764);
+      font-family: Arial, sans-serif;
     }
-
     .card {
-      background: #ffffff;
-      width: 90%;
-      max-width: 400px;
+      background: #fff;
       padding: 25px;
-      border-radius: 18px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 380px;
+      border-radius: 16px;
       text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     }
-
-    .card h1 {
-      margin: 0;
-      color: #333;
-    }
-
+    h1 { margin: 0; }
     .status {
       margin-top: 20px;
       padding: 15px;
-      border-radius: 12px;
-      background: #f1f1f1;
+      border-radius: 10px;
+      background: #eee;
       font-size: 18px;
-      color: #444;
     }
-
     .alert {
-      background: #ff3b3b !important;
-      color: white;
+      background: #ff3b3b;
+      color: #fff;
       animation: pulse 1s infinite;
     }
-
+    .value {
+      font-size: 40px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
-    }
-
-    .value {
-      font-size: 40px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .footer {
-      margin-top: 20px;
-      font-size: 12px;
-      color: #777;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="card">
-    <h1>🔥 LPG Monitor</h1>
-
-    <div id="status" class="status">
-      Waiting for sensor data...
-    </div>
-
-    <div id="value" class="value">--</div>
-
-    <div class="footer">
-      ESP8266 + Supabase + Netlify
-    </div>
-  </div>
+<div class="card">
+  <h1>📡 ESP32 Distance Monitor</h1>
+  <div id="status" class="status">Waiting for data…</div>
+  <div id="value" class="value">-- cm</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-  const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
+const supabaseUrl = "https://lqihidemgclutsjighjz.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaWhpZGVtZ2NsdXRzamlnaGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTQ3MDksImV4cCI6MjA4NDAzMDcwOX0.Emy89_OeRwsjwYtz-XaO-NZYCd0rg2Q5XYCbk_5hbQc";
 
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  // Ask notification permission
-  Notification.requestPermission();
+Notification.requestPermission();
 
-  supabase
-    .channel("lpg-realtime")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "lpg_data" },
-      payload => {
-        const gasValue = payload.new.value;
+supabase
+  .channel("distance-channel")
+  .on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "lpg_data" },
+    payload => {
+      const distance = payload.new.value;
 
-        const status = document.getElementById("status");
-        const value = document.getElementById("value");
+      document.getElementById("status").innerText =
+        "🚨 OBJECT TOO CLOSE!";
+      document.getElementById("status").classList.add("alert");
+      document.getElementById("value").innerText =
+        distance + " cm";
 
-        status.innerText = "🚨 GAS LEAK DETECTED!";
-        status.classList.add("alert");
-        value.innerText = gasValue;
+      alert("🚨 Object detected at " + distance + " cm");
 
-        alert("🚨 LPG ALERT!\nValue: " + gasValue);
-
-        if (Notification.permission === "granted") {
-          new Notification("LPG GAS ALERT 🚨", {
-            body: "Gas level reached: " + gasValue
-          });
-        }
+      if (Notification.permission === "granted") {
+        new Notification("ESP32 Distance Alert 🚨", {
+          body: "Object at " + distance + " cm"
+        });
       }
-    )
-    .subscribe();
+    }
+  )
+  .subscribe();
 </script>
 
 </body>
